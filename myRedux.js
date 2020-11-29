@@ -30,7 +30,7 @@ function createStore(reducer, preloadedState, enhancer) {
 	// 触发action
 	function dispatch(action) {
 		// 判断action 是否是对象
-		if (!isPlainObject(action)) throw new Error('action 必须是对象')
+		if (!isPlainObject(action)) throw new Error('action必须是一个对象')
 		// 对象中是否有type属性
 		if (typeof action.type === 'undefined')
 			throw new Error('action 对象中必须要有type属性')
@@ -96,5 +96,43 @@ function compose() {
 			dispatch = funcs[i](dispatch)
 		}
 		return dispatch
+	}
+}
+
+function bindActionCreators(actionCreators, dispatch) {
+	var boundActionCreators = {}
+	for (const key in actionCreators) {
+		boundActionCreators[key] = function () {
+			dispatch(actionCreators[key]())
+		}
+
+		// (function (key) {
+		//   boundActionCreators[key] = function () {
+		//     dispatch(actionCreators[key]())
+		//   }
+		// })(key)
+	}
+
+	return boundActionCreators
+}
+
+function combineReducers(reducers) {
+	// 1. 检查reducer类型 它必须是函数
+	var reducerKeys = Object.keys(reducers)
+	for (var i = 0; i < reducerKeys.length; i++) {
+		var key = reducerKeys[i]
+		if (typeof reducers[key] !== 'function')
+			throw new Error('reducer必须是函数')
+	}
+	// 2. 调用一个一个的小的reducer 将每一个小的reducer中返回的状态存储在一个新的大的对象中
+	return function (state, action) {
+		var nextState = {}
+		for (var i = 0; i < reducerKeys.length; i++) {
+			var key = reducerKeys[i]
+			var reducer = reducers[key]
+			var previousStateForKey = state[key]
+			nextState[key] = reducer(previousStateForKey, action)
+		}
+		return nextState
 	}
 }
