@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>myredux</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="">
+</head>
+
+<body>
+  <button id="increment"> + 1</button>
+  <span id="box">0</span>
+  <button id="decrement"> - 1</button>
+  <script src="myRedux.js"></script>
+  <script src="middlewares/logger.js"></script>
+  <script src="middlewares/thunk.js"></script>
+  <script>
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'increment':
+          return state + 1
+        case 'decrement':
+          return state - 1
+        default:
+          return state
+      }
+    }
+
+    function enhancer(createStore) {
+      return function(reducer, preloadedState) {
+        var store = createStore(reducer, preloadedState)
+        var dispatch = store.dispatch
+        function _dispatch(action) {
+          if (typeof action === 'function') {
+            return action(dispatch)
+          }
+          dispatch(action)
+        }
+        return {
+          ...store,
+          dispatch: _dispatch
+        }
+      }
+    }
+    // 创建store
+    // var store = createStore(reducer, 0, enhancer)
+    var store = createStore(reducer, 0, applyMiddleware(logger, thunk))
+    console.log(store)
+    store.subscribe(function() {
+      document.getElementById('box').innerHTML = store.getState()
+    })
+    // 绑定事件
+    document.getElementById('increment').onclick = function() {
+      // logger -> thunk -> reducer
+      // store.dispatch({ type: 'increment' })
+      store.dispatch(
+        function(dispatch) {
+          setTimeout(function() {
+            dispatch({ type: 'increment' })
+          }, 1000)
+        }
+      )
+    }
+
+    document.getElementById('decrement').onclick = function() {
+      store.dispatch({ type: 'decrement' })
+    }
+  </script>
+</body>
+
+</!DOCTYPE>
